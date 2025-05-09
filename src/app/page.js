@@ -8,8 +8,8 @@
 // Next/image 是 Next.js 提供的圖片優化組件
 // useState 是 React 的核心hook，用於管理組件的狀態
 import TaskList from "../components/TaskList";
-import Image from "next/image";
-import { useState } from "react";
+import Link from "next/link";
+import { useState,useEffect } from "react";
 
 // 定義主頁面組件
 // 在 Next.js 中，app 目錄下的 page.js 文件會自動成為路由頁面
@@ -24,24 +24,48 @@ export default function Home() {
   // setNewTask 用於更新輸入框的值
   const [newTask, setNewTask] = useState('');
 
+  const [nextId, setNextId] = useState(1);
+
+  useEffect(() => {
+    const savedTasks = JSON.parse(localStorage.getItem('task')) || [];
+    setTasks(savedTasks);
+    const maxId = savedTasks.reduce((max, task) => Math.max(max,task.id),0);
+    setNewTask(maxId + 1);
+  },[])
+
   // 添加新任務的函數
   // 當點擊"Add"按鈕時會調用此函數
   const addTask = () => {
     // 使用展開運算符(...) 創建一個新的任務數組
     // 這是 React 中更新狀態的推薦方式，因為它保持了狀態的不可變性
-    const updatedTasks = [...tasks, newTask];
+    const nextTaskObj = {
+      id: nextId,
+      title: newTask,
+      description: '',
+    };
+    const updatedTasks = [...tasks, nextTaskObj];
     
     // 更新任務列表
     setTasks(updatedTasks);
     
     // 清空輸入框
     setNewTask('');
+
+    setNextId(nextId+1);
+    localStorage.setItem('tasks', JSON.stringify(updatedTasks));
   };
+
+
+  const handleDelete = (index) => {
+    const newTasks = tasks.filter((_,i) => i !== index);
+    setTasks(newTasks);
+    localStorage.setItem('tasks', JSON.stringify(newTasks));
+  }
 
   // 渲染組件的 JSX
   // 在 Next.js 中，我們可以直接使用 Tailwind CSS 的類名來樣式化元素
   return (
-    <main className="p-4">
+    <main className="p-4 max-w-md mx-auto">
       {/* 頁面標題 */}
       <h1 className="text-2x1 font-bold">Task Board</h1>
 
@@ -68,7 +92,7 @@ export default function Home() {
 
       {/* 任務列表組件
           將 tasks 狀態作為 props 傳遞給 TaskList 組件 */}
-      <TaskList tasks={tasks} />
+      <TaskList tasks={tasks} onDelete={handleDelete}/>
     </main>
   );
 }
